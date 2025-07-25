@@ -1,8 +1,8 @@
-// --- IMPORTACIONES ---
+// --- 1. IMPORTACIONES ---
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-require('dotenv').config();
+require('dotenv').config(); // Carga las variables del archivo .env en process.env
 
 // --- CONFIGURACIÓN DE LA APP ---
 const app = express();
@@ -10,12 +10,12 @@ const PORT = 4000;
 app.use(cors());
 app.use(express.json());
 
-// --- CONEXIÓN A LA BASE DE DATOS ---
+// --- 2. CONEXIÓN A LA BASE DE DATOS ---
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('¡Conexión a MongoDB Atlas exitosa!'))
     .catch(error => console.error('Error al conectar a MongoDB:', error));
 
-// --- MODELO DEL MENÚ ---
+// --- 3. MODELO DEL MENÚ ---
 const menuItemSchema = new mongoose.Schema({
     name: { type: String, required: true },
     price: { type: Number, required: true },
@@ -24,7 +24,7 @@ const menuItemSchema = new mongoose.Schema({
 });
 const MenuItem = mongoose.model('MenuItem', menuItemSchema);
 
-// --- MODELO DE PEDIDOS ---
+// --- 4. MODELO DE PEDIDOS ---
 const orderSchema = new mongoose.Schema({
     displayId: { type: String, required: true },
     customer: {
@@ -43,7 +43,8 @@ const orderSchema = new mongoose.Schema({
 }, { timestamps: true });
 const Order = mongoose.model('Order', orderSchema);
 
-// --- RUTAS DE LA API DEL MENÚ ---
+
+// --- 5. RUTAS DE LA API DEL MENÚ ---
 
 app.get('/api/menu-items', async (req, res) => {
     try {
@@ -92,8 +93,9 @@ app.patch('/api/menu-items/:id/status', async (req, res) => {
     }
 });
 
-// --- RUTAS DE LA API DE PEDIDOS ---
+// --- 6. RUTAS DE LA API DE PEDIDOS ---
 
+// GET: Obtener todos los pedidos
 app.get('/api/orders', async (req, res) => {
     try {
         const orders = await Order.find().sort({ createdAt: -1 });
@@ -102,6 +104,19 @@ app.get('/api/orders', async (req, res) => {
         res.status(500).json({ message: 'Error al obtener los pedidos' });
     }
 });
+
+// POST: Crear un nuevo pedido
+app.post('/api/orders', async (req, res) => {
+    try {
+        const newOrder = new Order(req.body);
+        const savedOrder = await newOrder.save();
+        res.status(201).json(savedOrder);
+    } catch (error) {
+        res.status(400).json({ message: 'Error al crear el pedido', error: error });
+    }
+});
+
+// PATCH: Actualizar el estado de un pedido
 app.patch('/api/orders/:id/status', async (req, res) => {
     try {
         const { status } = req.body;
@@ -112,6 +127,8 @@ app.patch('/api/orders/:id/status', async (req, res) => {
         res.status(500).json({ message: 'Error al actualizar el estado del pedido' });
     }
 });
+
+// DELETE: Eliminar/Completar un pedido
 app.delete('/api/orders/:id', async (req, res) => {
     try {
         const deletedOrder = await Order.findByIdAndDelete(req.params.id);
