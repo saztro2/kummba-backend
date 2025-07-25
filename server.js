@@ -75,6 +75,31 @@ app.delete('/api/menu-items/:id', async (req, res) => {
     }
 });
 
+// --- NUEVA RUTA PARA CAMBIAR EL ESTADO DE UN PLATO (PATCH) ---
+// Usaremos una ruta específica para que la intención sea clara
+app.patch('/api/menu-items/:id/status', async (req, res) => {
+    try {
+        // 1. Encontrar el plato actual en la base de datos
+        const item = await MenuItem.findById(req.params.id);
+        if (!item) {
+            return res.status(404).json({ message: 'Plato no encontrado' });
+        }
+
+        // 2. Calcular el nuevo estado (el opuesto al actual)
+        const newStatus = item.status === 'available' ? 'unavailable' : 'available';
+
+        // 3. Actualizar el plato en la base de datos con el nuevo estado
+        const updatedItem = await MenuItem.findByIdAndUpdate(
+            req.params.id,
+            { status: newStatus },
+            { new: true } // Esta opción nos devuelve el documento ya actualizado
+        );
+
+        res.json(updatedItem); // 4. Enviar el plato actualizado de vuelta al frontend
+    } catch (error) {
+        res.status(500).json({ message: 'Error al actualizar el estado del plato' });
+    }
+});
 
 // --- INICIAR EL SERVIDOR ---
 app.listen(PORT, () => {
